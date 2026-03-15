@@ -1,0 +1,43 @@
+# ══════════════════════════════════════════════════════════
+#  iorana.dev — Configuración de seguridad
+#  Coloca este archivo en la raíz del servidor
+# ══════════════════════════════════════════════════════════
+
+# ── Cabeceras anti-indexación ──────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "no-referrer"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  Header always set Content-Security-Policy "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;"
+</IfModule>
+
+# ── Redirigir TODO a index.html (protección de rutas) ──────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Permitir acceso directo a index.html y archivos necesarios
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(?!index\.html|portal\.html|assets/)(.*)$ /index.html [R=302,L]
+
+  # Bloquear acceso a archivos sensibles
+  RewriteRule ^\.htaccess$ - [F,L]
+  RewriteRule ^\.env$ - [F,L]
+</IfModule>
+
+# ── Desactivar listado de directorios ──────────────────────
+Options -Indexes
+
+# ── Proteger archivos sensibles ───────────────────────────
+<FilesMatch "^\.(htaccess|htpasswd|env|git)">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ── Cache control ──────────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
