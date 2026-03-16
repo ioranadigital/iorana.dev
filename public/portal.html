@@ -4,112 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>IORANA Dev — Portal</title>
-  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />
-  <meta name="referrer" content="no-referrer" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,600;0,700;0,800;0,900;1,800&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
-    :root {
-      --orange:#f5600a;--navy:#0d1f35;--navy-mid:#152a40;--navy-light:#1a3050;
-      --white:#ffffff;--text:#c8d8e8;--muted:#6b89a5;
-      --border:rgba(255,255,255,0.08);
-      --font:'Barlow',sans-serif;--font-cond:'Barlow Condensed',sans-serif;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);background:var(--navy);color:var(--white);min-height:100vh}
-    .bg{position:fixed;inset:0;z-index:0;
-      background:linear-gradient(180deg,rgba(13,31,53,0.5) 0%,rgba(13,31,53,0.8) 60%,rgba(10,22,38,1) 100%),
-      linear-gradient(135deg,#0a1826 0%,#152a40 100%)}
-    .bg::before{content:'';position:absolute;inset:0;opacity:.025;
-      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      background-size:160px 160px}
-
-    /* Topbar */
-    .topbar{position:sticky;top:0;z-index:50;height:64px;
-      display:flex;align-items:center;justify-content:space-between;padding:0 40px;
-      background:rgba(9,19,33,0.85);backdrop-filter:blur(16px);
-      border-bottom:1px solid var(--border)}
-    .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-    .logo-icon{width:34px;height:34px;background:var(--orange);border-radius:50%;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0}
-    .logo-icon svg{width:20px;height:20px;fill:white}
-    .logo-text{font-weight:800;font-size:17px;color:var(--white)}
-    .logo-text b{color:var(--orange)}
-    .topbar-right{display:flex;align-items:center;gap:20px}
-    .status{display:flex;align-items:center;gap:7px;
-      font-family:var(--font-cond);font-size:12px;font-weight:600;
-      letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-    .status::before{content:'';width:7px;height:7px;border-radius:50%;
-      background:#22c55e;animation:pdot 2.5s ease-in-out infinite;flex-shrink:0}
-    @keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
-    .logout-btn{background:none;border:1px solid var(--border);border-radius:4px;
-      color:var(--muted);font-family:var(--font-cond);font-size:11px;font-weight:600;
-      letter-spacing:.1em;text-transform:uppercase;padding:7px 16px;cursor:pointer;
-      transition:color .2s,border-color .2s,background .2s}
-    .logout-btn:hover{color:var(--white);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.04)}
-
-    /* Main */
-    main{position:relative;z-index:1;padding:52px 40px 60px;max-width:1000px;margin:0 auto}
-
-    /* Hero */
-    .hero{margin-bottom:48px;padding-bottom:40px;border-bottom:1px solid var(--border)}
-    .hero-pill{display:inline-flex;align-items:center;gap:7px;
-      background:rgba(245,96,10,0.1);border:1px solid rgba(245,96,10,0.2);
-      border-radius:99px;padding:5px 14px;margin-bottom:20px;
-      font-family:var(--font-cond);font-size:11px;font-weight:600;
-      letter-spacing:.1em;text-transform:uppercase;color:var(--orange)}
-    .hero-pill::before{content:'';width:6px;height:6px;border-radius:50%;
-      background:var(--orange);animation:pdot 1.8s ease-in-out infinite}
-    .hero h1{font-weight:900;font-size:42px;line-height:1.05;letter-spacing:-.025em;color:var(--white);margin-bottom:10px}
-    .hero h1 em{color:var(--orange);font-style:italic}
-    .hero p{font-size:15px;color:var(--muted);font-weight:400;max-width:520px;line-height:1.6}
-
-    /* Stats strip */
-    .stats{display:flex;gap:40px;margin-top:32px;flex-wrap:wrap}
-    .stat-val{font-weight:900;font-size:26px;color:var(--white);letter-spacing:-.02em;display:block}
-    .stat-val b{color:var(--orange)}
-    .stat-label{font-family:var(--font-cond);font-size:12px;font-weight:600;
-      color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:2px;display:block}
-
-    /* Section header */
-    .section-head{display:flex;align-items:center;gap:14px;margin-bottom:20px;margin-top:44px}
-    .section-head h2{font-family:var(--font-cond);font-size:13px;font-weight:700;
-      letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-    .section-head::after{content:'';flex:1;height:1px;background:var(--border)}
-
-    /* Cards grid */
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
-
-    .tool-card{background:rgba(21,42,64,0.6);border:1px solid var(--border);border-radius:5px;
-      padding:24px;cursor:pointer;transition:border-color .2s,transform .2s,background .2s;
-      text-decoration:none;color:inherit;display:block;position:relative;overflow:hidden}
-    .tool-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
-      background:linear-gradient(90deg,transparent,rgba(245,96,10,0),transparent);
-      transition:background .3s}
-    .tool-card:hover{border-color:rgba(245,96,10,0.35);transform:translateY(-3px);
-      background:rgba(25,48,76,0.7)}
-    .tool-card:hover::before{background:linear-gradient(90deg,transparent,rgba(245,96,10,0.4),transparent)}
-
-    .card-ico{width:38px;height:38px;border-radius:6px;
-      background:rgba(245,96,10,0.08);border:1px solid rgba(245,96,10,0.15);
-      display:flex;align-items:center;justify-content:center;
-      color:var(--orange);margin-bottom:16px;
-      transition:background .2s,border-color .2s}
-    .tool-card:hover .card-ico{background:rgba(245,96,10,0.14);border-color:rgba(245,96,10,0.3)}
-    .card-title{font-weight:800;font-size:15px;color:var(--white);margin-bottom:6px;letter-spacing:-.01em}
-    .card-desc{font-size:12px;color:var(--muted);line-height:1.65}
-    .card-tag{display:inline-block;margin-top:14px;font-family:var(--font-cond);
-      font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-      color:var(--orange);background:rgba(245,96,10,0.08);
-      border:1px solid rgba(245,96,10,0.2);border-radius:3px;padding:2px 8px}
-
-    @media(max-width:600px){
-      .topbar{padding:0 20px}
-      main{padding:40px 20px 50px}
-      .hero h1{font-size:30px}
-      .stats{gap:24px}
-    }
+    /* ... (Tus estilos CSS) ... */
   </style>
 </head>
 <body>
@@ -123,7 +19,7 @@
     <span class="logo-text"><b>IORANA</b> Dev</span>
   </a>
   <div class="topbar-right">
-    <div class="status">Sesión activa</div>
+    <div class="status" id="userDisplayName">Cargando...</div>
     <button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
   </div>
 </nav>
@@ -136,85 +32,32 @@
     <div class="stats">
       <div><span class="stat-val"><b>iorana</b>.dev</span><span class="stat-label">Dominio activo</span></div>
       <div><span class="stat-val">Redis <b>+</b> Node</span><span class="stat-label">Stack</span></div>
-      <div><span class="stat-val">8<b>h</b></span><span class="stat-label">Duración sesión</span></div>
+      <div><span class="stat-val">8<b>h</b></span><span class="stat-label">Sesión</span></div>
     </div>
   </div>
 
-  <div class="section-head"><h2>Herramientas</h2></div>
-  <div class="grid">
-
-    <a href="#" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      </div>
-      <div class="card-title">Entorno de pruebas</div>
-      <div class="card-desc">Sandbox para testear herramientas y configuraciones antes de producción.</div>
-      <span class="card-tag">Dev</span>
-    </a>
-
-    <a href="#" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-      </div>
-      <div class="card-title">Herramientas</div>
-      <div class="card-desc">Instala y gestiona nuevas herramientas del entorno interno.</div>
-      <span class="card-tag">Tools</span>
-    </a>
-
-    <a href="#" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      </div>
-      <div class="card-title">Acceso & Seguridad</div>
-      <div class="card-desc">Configuración de sesiones, contraseñas y registros de acceso.</div>
-      <span class="card-tag">Admin</span>
-    </a>
-
-    <a href="#" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
-      </div>
-      <div class="card-title">Integraciones</div>
-      <div class="card-desc">APIs externas, conectores y servicios de terceros.</div>
-      <span class="card-tag">API</span>
-    </a>
-
-    <a href="/auth/sessions" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-      </div>
-      <div class="card-title">Redis Sessions</div>
-      <div class="card-desc">Monitoriza las sesiones activas almacenadas en Redis.</div>
-      <span class="card-tag">Redis</span>
-    </a>
-
-    <a href="#" class="tool-card">
-      <div class="card-ico">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-      </div>
-      <div class="card-title">Métricas</div>
-      <div class="card-desc">Logs del servidor, tiempos de respuesta y estado del sistema.</div>
-      <span class="card-tag">Monitor</span>
-    </a>
-
+  <div class="section-head"><h2>Herramientas Autorizadas</h2></div>
+  
+  <div class="grid" id="toolsGrid">
+    <p style="color: var(--muted)">Verificando credenciales...</p>
   </div>
 </main>
-
-<div class="grid" id="toolsGrid">
-  <p style="color: var(--muted)">Cargando herramientas autorizadas...</p>
-</div>
 
 <script>
   async function loadPortal() {
     try {
       const res = await fetch('/api/my-tools');
+      if (!res.ok) throw new Error("No autorizado");
       const user = await res.json();
 
-      const grid = document.getElementById('toolsGrid');
-      grid.innerHTML = ''; // Limpiamos el cargando
+      // Actualizar nombre en la interfaz
+      document.getElementById('userDisplayName').textContent = user.displayName || user.username;
 
-      // Definimos la base de datos de botones disponibles
-      const availableTools = [
+      const grid = document.getElementById('toolsGrid');
+      grid.innerHTML = ''; 
+
+      // Diccionario de todas las herramientas posibles
+      const toolsLibrary = [
         {
           id: 'n8n.iorana.dev',
           title: 'n8n Automation',
@@ -222,21 +65,28 @@
           tag: 'Workflow',
           url: 'https://n8n.iorana.dev',
           icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
+        },
+        {
+          id: 'admin-tools', // ID interno para botones de admin
+          title: 'Acceso & Seguridad',
+          desc: 'Configuración de sesiones y registros de acceso.',
+          tag: 'Admin',
+          url: '/auth/sessions',
+          icon: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
         }
-        // Aquí puedes añadir más herramientas en el futuro
       ];
 
-      // Filtramos: si el usuario tiene "*" o el dominio específico
-      const myTools = availableTools.filter(t => 
+      // Filtrar herramientas según el array 'tools' del usuario que viene de la API
+      const allowed = toolsLibrary.filter(t => 
         user.tools.includes('*') || user.tools.includes(t.id)
       );
 
-      if (myTools.length === 0) {
-        grid.innerHTML = '<p style="color: var(--muted)">No tienes herramientas asignadas. Contacta con el admin.</p>';
+      if (allowed.length === 0) {
+        grid.innerHTML = '<p style="color: var(--muted)">No tienes herramientas asignadas. Contacta con soporte.</p>';
         return;
       }
 
-      myTools.forEach(tool => {
+      allowed.forEach(tool => {
         grid.innerHTML += `
           <a href="${tool.url}" class="tool-card">
             <div class="card-ico">${tool.icon}</div>
@@ -248,7 +98,6 @@
       });
 
     } catch (err) {
-      console.error("Error cargando el portal", err);
       window.location.href = '/';
     }
   }
