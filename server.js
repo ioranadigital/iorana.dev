@@ -228,14 +228,30 @@ app.get("/auth/check", (req, res) => {
 //    401 → Traefik bloquea y redirige al login ❌
 // ══════════════════════════════════════════════════════════
 app.get("/auth/verify", (req, res) => {
-  const host      = req.headers["x-forwarded-host"] || "";
-  const proto     = req.headers["x-forwarded-proto"] || "https";
-  const uri       = req.headers["x-forwarded-uri"] || "/";
+  // Traefik envía estos headers con la petición original
+  const host      = req.headers["x-forwarded-host"]
+                 || req.headers["x-original-host"]
+                 || "";
+  const proto     = req.headers["x-forwarded-proto"]
+                 || req.headers["x-original-proto"]
+                 || "https";
+  const uri       = req.headers["x-forwarded-uri"]
+                 || req.headers["x-original-url"]
+                 || "/";
+
+  // Debug — visible en los logs de Coolify
+  console.log("[verify] host:", host, "| proto:", proto, "| uri:", uri);
+  console.log("[verify] all headers:", JSON.stringify(req.headers));
 
   // Sin sesión → redirigir al login
   if (!req.session?.authenticated) {
-    const returnTo = encodeURIComponent(`${proto}://${host}${uri}`);
-    return res.redirect(302, `https://iorana.dev/?returnTo=${returnTo}`);
+    const returnTo = host
+      ? encodeURIComponent(`${proto}://${host}${uri}`)
+      : "";
+    const loginURL = returnTo
+      ? `https://iorana.dev/?returnTo=${returnTo}`
+      : "https://iorana.dev/";
+    return res.redirect(302, loginURL);
   }
 
   const username = req.session.username;
