@@ -4,8 +4,8 @@
 
 services:
 
-  # ── App Node.js ──────────────────────────────────────────
- app:
+  # ── App Node.js (Portal) ─────────────────────────────────
+  app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,8 +17,6 @@ services:
       - PASSWORD_HASH=${PASSWORD_HASH}
     depends_on:
       - redis
-    # ⚠️ Sin "ports:" — Coolify expone el servicio via su proxy (Traefik)
-    # Coolify asigna el dominio automáticamente al puerto 3000
 
   # ── Redis ────────────────────────────────────────────────
   redis:
@@ -31,13 +29,9 @@ services:
       --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
-    # Sin "ports:" — solo accesible internamente dentro del stack
-
-volumes:
-  redis_data:
 
   # ── n8n Automation ───────────────────────────────────────
-n8n:
+  n8n:
     image: n8nio/n8n:latest
     restart: unless-stopped
     environment:
@@ -55,6 +49,7 @@ n8n:
       - "traefik.http.routers.n8n-router.tls.certresolver=letsencrypt"
       - "traefik.http.services.n8n-service.loadbalancer.server.port=5678"
 
+# ── Volúmenes (Sección única) ──────────────────────────────
 volumes:
   redis_data:
   n8n_data:
