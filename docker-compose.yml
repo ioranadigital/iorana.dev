@@ -5,7 +5,7 @@
 services:
 
   # ── App Node.js ──────────────────────────────────────────
-  app:
+ app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -37,7 +37,7 @@ volumes:
   redis_data:
 
   # ── n8n Automation ───────────────────────────────────────
-  n8n:
+n8n:
     image: n8nio/n8n:latest
     restart: unless-stopped
     environment:
@@ -48,7 +48,6 @@ volumes:
       - WEBHOOK_URL=https://n8n.iorana.dev/
     volumes:
       - n8n_data:/home/node/.n8n
-    # Las labels son CRUCIALES para que Traefik sepa a dónde enviar el tráfico
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.n8n-router.rule=Host(`n8n.iorana.dev`)"
@@ -58,4 +57,4 @@ volumes:
 
 volumes:
   redis_data:
-  n8n_data: # Añadimos el volumen para no perder tus flujos
+  n8n_data:
