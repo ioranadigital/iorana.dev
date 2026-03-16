@@ -1,0 +1,28 @@
+# ══════════════════════════════════════════════════════════
+#  iorana.dev — Variables de entorno
+#  ⚠️  NUNCA subas este archivo a Git
+# ══════════════════════════════════════════════════════════
+
+NODE_ENV=production
+PORT=3000
+
+# ── Secreto de sesión ─────────────────────────────────────
+SESSION_SECRET=2d8030c0d5d0c811224134f185d3bf0f1c07e4f5cdc5adf75b2f9c4350f154f01519d05eb9cecb4c06bd9bfa5fcf13aa
+
+# ── Cookie compartida entre subdominios ───────────────────
+# Descomenta esta línea cuando tengas Traefik Forward Auth activo
+# COOKIE_DOMAIN=.iorana.dev
+
+# ══════════════════════════════════════════════════════════
+#  USUARIOS — hash bcrypt de cada contraseña
+#  Para generar un hash: node hash-password.js
+# ══════════════════════════════════════════════════════════
+
+# admin → contraseña: iorana2025  (acceso total)
+ADMIN_HASH=$2b$12$luEtel7gx6dLx1IhZc2BGe6cHvXqDbbShqFmFjuDHbTDKolVfXPGy
+
+# n8n-user → contraseña: n8npass2025  (solo n8n.iorana.dev)
+N8N_USER_HASH=$2b$12$YyzrhXMwC58AgGltntRiWOdrOthz7zxsO2Tb0ZizDaNtN5waXHzmG
+
+# dev-user → contraseña: devpass2025  (n8n + app + tool)
+DEV_USER_HASH=$2b$12$sRiqOKOMHuti3SGT.6tWiuhiXOExYkiqdOH/MD3uEHnoxOBaeGbKu
