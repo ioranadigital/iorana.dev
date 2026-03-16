@@ -176,6 +176,9 @@ app.post("/auth/login", async (req, res) => {
     return res.status(401).json({ success: false, error: "Usuario o contraseña incorrectos." });
   }
 
+  // Guardar returnTo antes de regenerar sesión
+  const returnTo = req.body.returnTo || null;
+
   req.session.regenerate((err) => {
     if (err) return res.status(500).json({ success: false, error: "Error de sesión." });
     req.session.authenticated = true;
@@ -184,7 +187,9 @@ app.post("/auth/login", async (req, res) => {
     req.session.tools         = user.tools;
     req.session.loginAt       = new Date().toISOString();
     rateLimiter.reward(ip);
-    return res.json({ success: true, redirect: "/portal" });
+    // Si viene de un subdominio protegido, redirigir de vuelta
+    const redirectTo = returnTo && returnTo.startsWith("https://") ? returnTo : "/portal";
+    return res.json({ success: true, redirect: redirectTo, displayName: user.displayName });
   });
 });
 
