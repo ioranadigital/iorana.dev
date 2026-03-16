@@ -201,10 +201,26 @@
 </main>
 
 <script>
+  // Al cargar la página, pedimos nuestras herramientas permitidas
+  async function loadTools() {
+    try {
+      const response = await fetch('/api/my-tools');
+      const data = await response.json();
+      
+      // Aquí podrías usar data.tools para ocultar o mostrar los botones
+      // Ejemplo: si el usuario no tiene "n8n.iorana.dev", ocultas ese card.
+      console.log("Herramientas para " + data.displayName, data.tools);
+    } catch (err) {
+      window.location.href = '/'; // Si falla, al login
+    }
+  }
+
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await fetch('/auth/logout', { method: 'POST' });
     window.location.href = '/';
   });
+
+  loadTools();
 </script>
 </body>
 </html>
