@@ -84,15 +84,22 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc:  ["'self'", "'unsafe-inline'"],
+        scriptSrc:  ["'self'", "'unsafe-inline'"], // Necesario para tus scripts del portal
         styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-        imgSrc:     ["'self'", "data:"],
+        imgSrc:     ["'self'", "data:", "https:"],
         connectSrc: ["'self'"],
-        frameSrc:   ["'none'"],
+        frameSrc:   ["'none'"], // Evita que tu sitio sea cargado en iframes (anti-clickjacking)
+        upgradeInsecureRequests: [], // Fuerza a que todo lo que pida el navegador sea vía HTTPS
       },
     },
-    referrerPolicy: { policy: "no-referrer" },
+    // HSTS: Le dice al navegador que durante 1 año solo acceda vía HTTPS
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
   })
 );
 
