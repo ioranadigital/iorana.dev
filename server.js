@@ -5,58 +5,30 @@
 
 require("dotenv").config();
 
-const express               = require("express");
-const session               = require("express-session");
-const bcrypt                = require("bcryptjs");
-const helmet                = require("helmet");
-const path                  = require("path");
-const { RateLimiterMemory } = require("rate-limiter-flexible");
+const express                = require("express");
+const session                = require("express-session");
+const bcrypt                 = require("bcryptjs");
+const helmet                 = require("helmet");
+const path                   = require("path");
+const { RateLimiterMemory }  = require("rate-limiter-flexible");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ══════════════════════════════════════════════════════════
-//  USUARIOS Y PERMISOS
-//  Edita esta sección para añadir/quitar usuarios y accesos.
-//
-//  Para generar un hash: node hash-password.js
-//
-//  tools: lista de subdominios permitidos para ese usuario.
-//         Usa "*" para acceso total a todos los subdominios.
-// ══════════════════════════════════════════════════════════
+// ── USUARIOS Y PERMISOS ───────────────────────────────────
 const USERS = {
-
-  // Administrador — acceso total
   "admin": {
     passwordHash: process.env.ADMIN_HASH || process.env.PASSWORD_HASH,
     tools: ["*"],
     displayName: "Administrador"
   },
-
-  // Ejemplo: usuario con acceso solo a n8n
-  "n8n-user": {
-    passwordHash: process.env.N8N_USER_HASH,
-    tools: ["n8n.iorana.dev"],
-    displayName: "Usuario N8N"
-  },
-
-  // Ejemplo: usuario con acceso a varias herramientas
-  "dev-user": {
-    passwordHash: process.env.DEV_USER_HASH,
-    tools: ["n8n.iorana.dev", "app.iorana.dev", "tool.iorana.dev"],
-    displayName: "Developer"
-  },
-
-  // Lara
   "lara": {
     passwordHash: process.env.LARA_HASH,
     tools: ["n8n.iorana.dev"],
     displayName: "Lara"
-  },
-
+  }
 };
 
-// ── Helpers de permisos ───────────────────────────────────
 function userCanAccess(username, host) {
   const user = USERS[username];
   if (!user) return false;
@@ -68,55 +40,34 @@ function getUserByName(username) {
   return USERS[username] || null;
 }
 
-// ══════════════════════════════════════════════════════════
-//  RATE LIMITER
-// ══════════════════════════════════════════════════════════
-const rateLimiter = new RateLimiterMemory({
-  points:   5,
-  duration: 15 * 60,
-});
+// ── MIDDLEWARES BÁSICOS ───────────────────────────────────
+const rateLimiter = new RateLimiterMemory({ points: 5, duration: 15 * 60 });
 
-// ══════════════════════════════════════════════════════════
-//  HELMET
-// ══════════════════════════════════════════════════════════
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc:  ["'self'", "'unsafe-inline'"], // Necesario para tus scripts del portal
-        styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc:    ["'self'", "https://fonts.gstatic.com"],
-        imgSrc:     ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
-        frameSrc:   ["'none'"], // Evita que tu sitio sea cargado en iframes (anti-clickjacking)
-        upgradeInsecureRequests: [], // Fuerza a que todo lo que pida el navegador sea vía HTTPS
-      },
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'", "'unsafe-inline'"],
+      styleSrc:   ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc:    ["'self'", "https://fonts.gstatic.com"],
+      imgSrc:     ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      frameSrc:   ["'none'"],
+      upgradeInsecureRequests: [],
     },
-    // HSTS: Le dice al navegador que durante 1 año solo acceda vía HTTPS
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
-    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-  })
-);
+  },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+}));
 
 app.use((req, res, next) => {
   res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   next();
 });
 
-// ── Parsers ───────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ══════════════════════════════════════════════════════════
-//  SESIONES
-//  COOKIE_DOMAIN=.iorana.dev comparte la cookie entre
-//  todos los subdominios *.iorana.dev
-// ══════════════════════════════════════════════════════════
+// ── SESIONES ──────────────────────────────────────────────
 app.use(
   session({
     secret:            process.env.SESSION_SECRET || "cambia-este-secreto",
@@ -133,213 +84,106 @@ app.use(
   })
 );
 
-// ── Protección rutas internas ─────────────────────────────
+// ── FILTRO DE HOST (EL BLOQUE NUEVO) ──────────────────────
+// Este bloque evita que el portal intercepte peticiones de n8n
+app.use((req, res, next) => {
+  const host = req.headers.host || "";
+  const isAuthPath = req.path.startsWith("/auth/");
+  
+  // Si la petición es para un subdominio (n8n, pdf, etc.) 
+  // y NO es una ruta de verificación de login, dejamos que pase de largo.
+  if (host !== "iorana.dev" && host !== "www.iorana.dev" && !isAuthPath) {
+    return next(); 
+  }
+  next();
+});
+
+// ── PROTECCIÓN RUTAS ──────────────────────────────────────
 function requireAuth(req, res, next) {
   if (req.session?.authenticated) return next();
-  if (req.accepts("html"))        return res.redirect("/");
+  if (req.accepts("html")) return res.redirect("/");
   return res.status(401).json({ error: "No autenticado" });
 }
 
-// ══════════════════════════════════════════════════════════
-//  RUTAS PÚBLICAS
-// ══════════════════════════════════════════════════════════
-
+// ── RUTAS PÚBLICAS ────────────────────────────────────────
 app.get("/", (req, res) => {
   if (req.session?.authenticated) return res.redirect("/portal");
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ── POST /auth/login ──────────────────────────────────────
 app.post("/auth/login", async (req, res) => {
   const ip = req.ip;
-
-  try {
-    await rateLimiter.consume(ip);
-  } catch {
-    return res.status(429).json({
-      success: false,
-      error: "Demasiados intentos. Espera 15 minutos.",
-    });
+  try { await rateLimiter.consume(ip); } catch {
+    return res.status(429).json({ success: false, error: "Demasiados intentos." });
   }
 
-  const { username, password } = req.body;
+  const { username, password, returnTo } = req.body;
+  const user = getUserByName(username?.trim().toLowerCase());
 
-  if (!username || !password || typeof username !== "string" || typeof password !== "string") {
-    return res.status(400).json({ success: false, error: "Usuario y contraseña requeridos." });
+  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    return res.status(401).json({ success: false, error: "Credenciales inválidas." });
   }
-
-  const user = getUserByName(username.trim().toLowerCase());
-
-  // Hash no configurado para este usuario
-  if (!user || !user.passwordHash) {
-    await new Promise(r => setTimeout(r, 300));
-    return res.status(401).json({ success: false, error: "Usuario o contraseña incorrectos." });
-  }
-
-  const match = await bcrypt.compare(password, user.passwordHash);
-
-  if (!match) {
-    await new Promise(r => setTimeout(r, 300));
-    return res.status(401).json({ success: false, error: "Usuario o contraseña incorrectos." });
-  }
-
-  // Guardar returnTo antes de regenerar sesión
-  const returnTo = req.body.returnTo || null;
 
   req.session.regenerate((err) => {
-    if (err) return res.status(500).json({ success: false, error: "Error de sesión." });
+    if (err) return res.status(500).json({ success: false, error: "Error." });
     req.session.authenticated = true;
     req.session.username      = username.trim().toLowerCase();
     req.session.displayName   = user.displayName;
     req.session.tools         = user.tools;
-    req.session.loginAt       = new Date().toISOString();
-    rateLimiter.reward(ip);
-    // Si viene de un subdominio protegido, redirigir de vuelta
+    
     const redirectTo = returnTo && returnTo.startsWith("https://") ? returnTo : "/portal";
-    return res.json({ success: true, redirect: redirectTo, displayName: user.displayName });
+    return res.json({ success: true, redirect: redirectTo });
   });
 });
 
-// ── POST /auth/logout ─────────────────────────────────────
 app.post("/auth/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie("iorana.sid", {
-      domain: process.env.COOKIE_DOMAIN || undefined,
-    });
+    res.clearCookie("iorana.sid", { domain: process.env.COOKIE_DOMAIN });
     res.json({ success: true });
   });
 });
 
-// ── GET /auth/check ───────────────────────────────────────
-app.get("/auth/check", (req, res) => {
-  res.json({
-    authenticated: !!req.session?.authenticated,
-    username:      req.session?.username || null,
-    displayName:   req.session?.displayName || null,
-  });
-});
-
-// ══════════════════════════════════════════════════════════
-//  TRAEFIK FORWARD AUTH
-//
-//  Traefik llama a este endpoint ANTES de dejar pasar
-//  cualquier petición a un subdominio protegido.
-//
-//  Headers que envía Traefik:
-//    X-Forwarded-Host  → subdominio pedido (ej: n8n.iorana.dev)
-//    X-Forwarded-Uri   → ruta pedida      (ej: /workflows)
-//    X-Forwarded-Proto → https
-//
-//  Respuestas:
-//    200 → Traefik deja pasar la petición ✅
-//    401 → Traefik bloquea y redirige al login ❌
-// ══════════════════════════════════════════════════════════
+// ── FORWARD AUTH (VERIFY) ─────────────────────────────────
 app.get("/auth/verify", (req, res) => {
-  // Traefik envía estos headers con la petición original
-  const host      = req.headers["x-forwarded-host"]
-                 || req.headers["x-original-host"]
-                 || "";
-  const proto     = req.headers["x-forwarded-proto"]
-                 || req.headers["x-original-proto"]
-                 || "https";
-  const uri       = req.headers["x-forwarded-uri"]
-                 || req.headers["x-original-url"]
-                 || "/";
+  const host = req.headers["x-forwarded-host"] || "";
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const uri = req.headers["x-forwarded-uri"] || "/";
 
-  // Debug — visible en los logs de Coolify
-  console.log("[verify] host:", host, "| proto:", proto, "| uri:", uri);
-  console.log("[verify] all headers:", JSON.stringify(req.headers));
-
-  // Sin sesión → redirigir al login
   if (!req.session?.authenticated) {
-    const returnTo = host
-      ? encodeURIComponent(`${proto}://${host}${uri}`)
-      : "";
-    const loginURL = returnTo
-      ? `https://iorana.dev/?returnTo=${returnTo}`
-      : "https://iorana.dev/";
-    return res.redirect(302, loginURL);
+    const returnTo = encodeURIComponent(`${proto}://${host}${uri}`);
+    return res.redirect(302, `https://iorana.dev/?returnTo=${returnTo}`);
   }
 
-  const username = req.session.username;
-
-  // Sin permiso para este subdominio → 403
-  if (!userCanAccess(username, host)) {
-    return res.status(403).send(`
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8"/>
-        <title>Acceso denegado</title>
-        <style>
-          body { font-family: sans-serif; background: #0d1f35; color: #c8d8e8;
-                 display: flex; align-items: center; justify-content: center;
-                 min-height: 100vh; margin: 0; flex-direction: column; gap: 16px; }
-          h1   { color: #f5600a; font-size: 24px; }
-          p    { color: #6b89a5; font-size: 14px; }
-          a    { color: #f5600a; }
-        </style>
-      </head>
-      <body>
-        <h1>Acceso denegado</h1>
-        <p>No tienes permiso para acceder a <strong>${host}</strong>.</p>
-        <p><a href="https://iorana.dev/portal">Volver al portal</a></p>
-      </body>
-      </html>
-    `);
+  if (!userCanAccess(req.session.username, host)) {
+    return res.status(403).send("<h1>Acceso denegado</h1>");
   }
 
-  // ✅ Autenticado y con permiso → pasar
-  res.setHeader("X-Forwarded-User", username);
+  res.setHeader("X-Forwarded-User", req.session.username);
   return res.status(200).send("OK");
 });
 
-// ── robots.txt ────────────────────────────────────────────
-app.get("/robots.txt", (req, res) => {
-  res.type("text/plain");
-  res.send("User-agent: *\nDisallow: /\n");
-});
-
-// ══════════════════════════════════════════════════════════
-//  RUTAS PROTEGIDAS
-// ══════════════════════════════════════════════════════════
-
+// ── RUTAS PROTEGIDAS ──────────────────────────────────────
 app.get("/portal", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "portal.html"));
 });
 
-// API: lista de herramientas del usuario actual
 app.get("/api/my-tools", requireAuth, (req, res) => {
-  res.json({
-    username:    req.session.username,
-    displayName: req.session.displayName,
-    tools:       req.session.tools,
-  });
+  res.json({ tools: req.session.tools, displayName: req.session.displayName });
 });
 
-app.use("/assets", requireAuth, express.static(path.join(__dirname, "public", "assets")));
+app.use("/assets", express.static(path.join(__dirname, "public", "assets")));
 
-// ── 404 ───────────────────────────────────────────────────
+// ── MANEJO DE ERRORES 404 (SOLO PARA IORANA.DEV) ──────────
 app.use((req, res) => {
-  if (req.session?.authenticated) return res.redirect("/portal");
-  res.redirect("/");
+  const host = req.headers.host || "";
+  // Solo redirigimos al portal si el error ocurre en el dominio principal
+  if (host === "iorana.dev" || host === "www.iorana.dev") {
+    return res.redirect(req.session?.authenticated ? "/portal" : "/");
+  }
+  // Para subdominios (n8n), dejamos que ellos manejen su propio 404
+  res.status(404).send("Not Found");
 });
 
-// ── Arranque ──────────────────────────────────────────────
 app.listen(PORT, () => {
-  const userCount = Object.keys(USERS).length;
-  console.log(`\n✓  iorana.dev corriendo en http://localhost:${PORT}`);
-  console.log(`   Entorno      : ${process.env.NODE_ENV || "development"}`);
-  console.log(`   Usuarios     : ${userCount} configurados`);
-  console.log(`   Cookie domain: ${process.env.COOKIE_DOMAIN || "mismo dominio"}`);
-  console.log(`   Forward auth : https://iorana.dev/auth/verify\n`);
-  Object.entries(USERS).forEach(([name, u]) => {
-    const tools = u.tools.includes("*") ? "todos los subdominios" : u.tools.join(", ");
-    const ok    = u.passwordHash ? "✓" : "⚠ sin hash";
-    console.log(`   [${ok}] ${name} (${u.displayName}) → ${tools}`);
-  });
-  console.log("");
+  console.log(`✓ iorana.dev — Autenticador activo en puerto ${PORT}`);
 });
-
-process.on("SIGTERM", () => process.exit(0));
-process.on("SIGINT",  () => process.exit(0));
